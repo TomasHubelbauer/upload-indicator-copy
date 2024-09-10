@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Upload Indicator Copy</title>
+    <script type="module">
+      function plural(count) {
+        if (count === 1) {
+          return "upload";
+        }
+
+        return "uploads";
+      }
+
+      // Note that these are the combinations of in progress, succeeded, failed
+      const copy = {
+        inProgressSucceededFailed: ({ inProgress, succeeded, failed, total }) =>
+          `${inProgress} ${plural(
+            inProgress
+          )} in progress, ${succeeded} succeeded, ${failed} failed (${total} total)`,
+        inProgressSucceeded: ({ inProgress, succeeded, total }) =>
+          `${inProgress} ${plural(
+            inProgress
+          )} in progress, ${succeeded} succeeded (${total} total)`,
+        inProgressFailed: ({ inProgress, failed, total }) =>
+          `${inProgress} ${plural(
+            inProgress
+          )} in progress, ${failed} failed (${total} total)`,
+        inProgress: ({ total }) => `${total} ${plural(total)} in progress`,
+        succeededFailed: ({ succeeded, failed, total }) =>
+          `${succeeded} ${plural(
+            succeeded
+          )} succeeded, ${failed} failed (${total} total)`,
+        succeeded: ({ total }) => `All ${total} ${plural(total)} succeeded`,
+        failed: ({ total }) => `All ${total} ${plural(total)} failed`,
+      };
+
+      const state = {
+        inProgress: 0,
+        succeeded: 0,
+        failed: 0,
+      };
+
+      document.querySelectorAll('input[type="number"]').forEach((input) => {
+        console.log(`Bound ${input.name}`);
+
+        input.addEventListener("input", (event) => {
+          state[event.target.name] = parseInt(event.target.value);
+          render();
+        });
+      });
+
+      function render() {
+        const key = [
+          state.inProgress && "inProgress",
+          state.succeeded && "succeeded",
+          state.failed && "failed",
+        ]
+          .filter(Boolean)
+          .map((part, index) =>
+            index === 0 ? part : part[0].toUpperCase() + part.slice(1)
+          )
+          .join("");
+
+        if (!key) {
+          document.querySelector("#indicatorDiv").style.display = "none";
+          console.log({ state, key });
+          return;
+        }
+
+        const fn = copy[key];
+        if (!fn) {
+          document.querySelector("#indicatorDiv").style.display = "none";
+          console.log({ state, key, error: "No fn" });
+          return;
+        }
+
+        const text = copy[key]({
+          inProgress: state.inProgress,
+          succeeded: state.succeeded,
+          failed: state.failed,
+          total: state.inProgress + state.succeeded + state.failed,
+        });
+
+        const emoji = state.failed ? "❌" : state.inProgress ? "⏳" : "✅";
+
+        console.log({ state, key, text });
+        document.querySelector(
+          "#indicatorDiv"
+        ).textContent = `${emoji} ${text}`;
+        document.querySelector("#indicatorDiv").style.display = "initial";
+      }
+
+      render();
+    </script>
+  </head>
+  <body style="font: icon">
+    <h1>Upload Indicator Copy</h1>
+    <h2>System State</h2>
+    <ul style="list-style-type: none">
+      <li>
+        <span style="display: inline-block; width: 12ch">In progress:</span>
+        <input type="number" min="0" max="10" value="0" name="inProgress" />
+      </li>
+      <li>
+        <span style="display: inline-block; width: 12ch">Succeeded:</span>
+        <input type="number" min="0" max="10" value="0" name="succeeded" />
+      </li>
+      <li>
+        <span style="display: inline-block; width: 12ch">Failed:</span>
+        <input type="number" min="0" max="10" value="0" name="failed" />
+      </li>
+    </ul>
+    <h2>Indicator Design</h2>
+    <div
+      style="
+        border: 1px solid silver;
+        border-radius: 1ex;
+        box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+        padding: 1ex;
+      "
+      id="indicatorDiv"
+    ></div>
+  </body>
+</html>
